@@ -81,6 +81,8 @@ Coming soon
 
 ### API
 
+> If you want to backup all databases:
+
 ```js
 const Cacti = require('cacti');
 
@@ -94,6 +96,14 @@ cacti.mongo().then(console.log).catch(console.error);
 
 // simply run bgsave to create a redis backup file
 cacti.redis().then(console.log).catch(console.error);
+```
+
+> If you want to backup only a specific database:
+
+```js
+const Cacti = require('cacti');
+const cacti = new Cacti('my-s3-bucket-name', { mongo: '--db=some_database' });
+cacti.backup().then(console.log).catch(console.error);
 ```
 
 #### new Cacti(bucket, options)
