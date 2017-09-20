@@ -12,7 +12,8 @@
     "Nick Baugh <niftylettuce@gmail.com> (http://niftylettuce.com/)"
   ],
   "dependencies": {
-    "aws-sdk": "^2.119.0",
+    "auto-bind": "^1.1.0",
+    "aws-sdk": "^2.120.0",
     "child-process-promise": "^2.2.1",
     "delay": "^2.0.0",
     "fs-extra": "^4.0.2",
@@ -23,7 +24,6 @@
     "verbose": true
   },
   "devDependencies": {
-    "auto-bind": "^1.1.0",
     "ava": "^0.22.0",
     "codecov": "^2.3.0",
     "cross-env": "^5.0.5",
