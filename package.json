@@ -2,7 +2,7 @@
   "name": "cacti",
   "description":
     "Extremely simple MongoDB/Redis backups to Amazon S3 with encryption and compression'",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "author": "Nick Baugh <niftylettuce@gmail.com> (http://niftylettuce.com/)",
   "bugs": {
     "url": "https://github.com/niftylettuce/cacti/issues",
