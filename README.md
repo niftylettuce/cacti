@@ -70,9 +70,12 @@ Note that if you have changed the paths below from the defaults provided then yo
 * Ubuntu: Run the commands below and replace `user` with your currently logged in username (type `whoami` to get this)
 
   ```sh
+  sudo adduser user redis
   sudo chown redis:redis /var/lib/redis/dump.rdb
-  sudo chmod 660 /var/lib/redis/dump.rdb
-  sudo usermod -a -G redis user
+  sudo chmod g+wr /var/lib/redis/dump.rdb
+  sudo chown -R redis:redis /etc/redis
+  sudo chown redis:redis /etc/redis/redis.conf
+  sudo chmod -R g+wr /etc/redis
   ```
 
 ### CLI

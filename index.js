@@ -87,92 +87,132 @@ class Cacti {
 
   backup(tasks = ['mongo', 'redis']) {
     return Promise.all(
-      tasks.map(async prop => {
-        let filePath = await this[prop]();
-        filePath = await this.tar(filePath);
-        const res = await this.upload(
-          this.config[`${prop}Directory`],
-          filePath
-        );
-        return res;
+      tasks.map(prop => {
+        return new Promise(async (resolve, reject) => {
+          try {
+            let filePath = await this[prop]();
+            filePath = await this.tar(filePath);
+            const res = await this.upload(
+              this.config[`${prop}Directory`],
+              filePath
+            );
+            resolve(res);
+          } catch (err) {
+            reject(err);
+          }
+        });
       })
     );
   }
 
-  async upload(dir, filePath) {
-    // ensure bucket name is set
-    if (typeof this.bucket !== 'string' || this.bucket.trim() === '')
-      throw new Error('S3 bucket name argument `bucket` is required');
+  upload(dir, filePath) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        // ensure bucket name is set
+        if (typeof this.bucket !== 'string' || this.bucket.trim() === '')
+          throw new Error('S3 bucket name argument `bucket` is required');
 
-    // ensure aws keys are set
-    if (typeof this.config.aws !== 'object')
-      throw new Error('AWS config must be an object');
+        // ensure aws keys are set
+        if (typeof this.config.aws !== 'object')
+          throw new Error('AWS config must be an object');
 
-    if (typeof this.config.aws.accessKeyId !== 'string')
-      throw new Error('AWS access key ID was missing');
+        if (typeof this.config.aws.accessKeyId !== 'string')
+          throw new Error('AWS access key ID was missing');
 
-    if (typeof this.config.aws.secretAccessKey !== 'string')
-      throw new Error('AWS secret access key was missing');
+        if (typeof this.config.aws.secretAccessKey !== 'string')
+          throw new Error('AWS secret access key was missing');
 
-    // setup s3 instance
-    const s3 = new AWS.S3(this.config.aws);
-    const params = {
-      Bucket: this.bucket,
-      Key: `${this.config.directory}${dir}/${path.basename(filePath)}`,
-      ACL: 'private',
-      Body: fs.createReadStream(filePath),
-      ServerSideEncryption: 'AES256'
-    };
-    const res = await s3.upload(params).promise();
-    await fs.remove(filePath);
-    return res;
+        // setup s3 instance
+        const s3 = new AWS.S3(this.config.aws);
+        const params = {
+          Bucket: this.bucket,
+          Key: `${this.config.directory}${dir}/${path.basename(filePath)}`,
+          ACL: 'private',
+          Body: fs.createReadStream(filePath),
+          ServerSideEncryption: 'AES256'
+        };
+        const res = await s3.upload(params).promise();
+        await fs.remove(filePath);
+        resolve(res);
+      } catch (err) {
+        reject(err);
+      }
+    });
   }
 
-  async tar(dir) {
-    const file = `${os.tmpdir()}/${path.basename(dir)}.tgz`;
-    await tar.c({ gzip: true, file, cwd: path.dirname(dir) }, [
-      path.basename(dir)
-    ]);
-    await fs.remove(dir);
-    return file;
+  tar(dir) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const file = `${os.tmpdir()}/${path.basename(dir)}.tgz`;
+        await tar.c({ gzip: true, file, cwd: path.dirname(dir) }, [
+          path.basename(dir)
+        ]);
+        await fs.remove(dir);
+        resolve(file);
+      } catch (err) {
+        reject(err);
+      }
+    });
   }
 
-  async mongo() {
-    const dir = path.join(__dirname, new Date().toISOString());
-    await exec(`mongodump ${this.config.mongo} --out=${dir}`);
-    return dir;
+  mongo() {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const dir = path.join(__dirname, new Date().toISOString());
+        await exec(`mongodump ${this.config.mongo} --out=${dir}`);
+        resolve(dir);
+      } catch (err) {
+        reject(err);
+      }
+    });
   }
 
-  async getRedisBgSaveFilePath(lastSave) {
-    await delay(this.config.redisBgSaveCheckInterval);
+  getRedisBgSaveFilePath(lastSave) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        await delay(this.config.redisBgSaveCheckInterval);
 
-    const { stdout } = await exec(
-      `echo lastsave | redis-cli ${this.config.redis}`
-    );
+        const { stdout } = await exec(
+          `echo lastsave | redis-cli ${this.config.redis}`
+        );
 
-    const unixTime = parseInt(stdout.replace(/\D/g, ''), 10);
-    if (unixTime < lastSave) return this.getRedisBgSaveFilePath(lastSave);
-    return `${os.tmpdir()}/${new Date(unixTime * 1000).toISOString()}.dump.rdb`;
+        const unixTime = parseInt(stdout.replace(/\D/g, ''), 10);
+        if (unixTime < lastSave) return this.getRedisBgSaveFilePath(lastSave);
+        resolve(
+          `${os.tmpdir()}/${new Date(unixTime * 1000).toISOString()}.dump.rdb`
+        );
+      } catch (err) {
+        reject(err);
+      }
+    });
   }
 
-  async redis() {
-    // attempt to read redis conf path
-    const conf = await fs.readFile(this.config.redisConfPath, 'utf8');
-    const rdbFileName = conf
-      .substring(conf.indexOf('\ndbfilename'))
-      .split('\n')[1]
-      .split(' ')[1];
-    const rdbDirectory = conf
-      .substring(conf.indexOf('\ndir'))
-      .split('\n')[1]
-      .split(' ')[1];
-    const rdbFilePath = path.join(rdbDirectory, rdbFileName);
-    let lastSave = await exec(`echo lastsave | redis-cli ${this.config.redis}`);
-    lastSave = parseInt(lastSave.stdout.replace(/\D/g, ''), 10);
-    await exec(`echo bgsave | redis-cli ${this.config.redis}`);
-    const filePath = await this.getRedisBgSaveFilePath(lastSave);
-    await fs.copy(rdbFilePath, filePath);
-    return filePath;
+  redis() {
+    return new Promise(async (resolve, reject) => {
+      try {
+        // attempt to read redis conf path
+        const conf = await fs.readFile(this.config.redisConfPath, 'utf8');
+        const rdbFileName = conf
+          .substring(conf.indexOf('\ndbfilename'))
+          .split('\n')[1]
+          .split(' ')[1];
+        const rdbDirectory = conf
+          .substring(conf.indexOf('\ndir'))
+          .split('\n')[1]
+          .split(' ')[1];
+        const rdbFilePath = path.join(rdbDirectory, rdbFileName);
+        let lastSave = await exec(
+          `echo lastsave | redis-cli ${this.config.redis}`
+        );
+        lastSave = parseInt(lastSave.stdout.replace(/\D/g, ''), 10);
+        await exec(`echo bgsave | redis-cli ${this.config.redis}`);
+        const filePath = await this.getRedisBgSaveFilePath(lastSave);
+        await fs.copy(rdbFilePath, filePath);
+        resolve(filePath);
+      } catch (err) {
+        reject(err);
+      }
+    });
   }
 }
 
