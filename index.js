@@ -48,7 +48,7 @@ class Cacti {
     // `process.env.DATABASE_NAME` exists then use
     // that, otherwise don't modify the option at all
     if (typeof config.mongo === 'undefined' && process.env.DATABASE_NAME)
-      config.mongo = `--db=${process.env.DATABASE_NAME}`;
+      this.config.mongo = `--db=${process.env.DATABASE_NAME}`;
 
     //
     // validate bucket is set with optional fallback
