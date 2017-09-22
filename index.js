@@ -8,7 +8,7 @@ const autoBind = require('auto-bind');
 const AWS = require('aws-sdk');
 
 class Cacti {
-  constructor(bucket = '', config = {}) {
+  constructor(bucket = process.env.CACTI_AWS, config = {}) {
     // allow config as first argument
     if (typeof bucket === 'object') config = bucket;
 
@@ -22,6 +22,9 @@ class Cacti {
         // s3 directory for redis backup
         redisDirectory: 'redis',
         // mongorestore options/flags
+        // note that if `process.env.DATABASE_NAME` is set
+        // set this value to `--db=${process.env.DATABASE_NAME}`
+        // (as long as you don't pass this option at all when configuring)
         mongo: '',
         // redis-cli options/flags
         redis: '',
@@ -41,6 +44,12 @@ class Cacti {
       config
     );
 
+    // if the mongo option was not set in `config` and
+    // `process.env.DATABASE_NAME` exists then use
+    // that, otherwise don't modify the option at all
+    if (typeof config.mongo === 'undefined' && process.env.DATABASE_NAME)
+      config.mongo = `--db=${process.env.DATABASE_NAME}`;
+
     //
     // validate bucket is set with optional fallback
     //
@@ -52,6 +61,11 @@ class Cacti {
       typeof this.config.aws.params.Bucket === 'string'
     )
       bucket = this.config.aws.params.Bucket;
+
+    // if the bucket was not a string
+    // and `process.env.CACTI_AWS_BUCKET` is set
+    if (typeof bucket !== 'string' && process.env.CACTI_AWS_BUCKET)
+      bucket = process.env.CACTI_AWS_BUCKET;
 
     this.bucket = bucket;
 

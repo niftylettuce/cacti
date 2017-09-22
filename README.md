@@ -71,11 +71,10 @@ Note that if you have changed the paths below from the defaults provided then yo
 
   ```sh
   sudo adduser user redis
-  sudo chown redis:redis /var/lib/redis/dump.rdb
-  sudo chmod g+wr /var/lib/redis/dump.rdb
   sudo chown -R redis:redis /etc/redis
-  sudo chown redis:redis /etc/redis/redis.conf
-  sudo chmod -R g+wr /etc/redis
+  sudo chown -R redis:redis /var/lib/redis
+  sudo chmod g+wr /etc/redis/redis.conf
+  sudo chmod g+wr /var/lib/redis/dump.rdb
   ```
 
 ### CLI
@@ -160,6 +159,8 @@ The default option values are provided below, and can be overridden through both
 
 The only required option is `bucket` (but this is only checked in the `upload` method), which is the Amazon S3 bucket name you'll upload backups to.
 
+By default the value of `bucket` will be set to `process.env.CACTI_AWS_BUCKET` if it is set and `bucket` is not a String.
+
 Note that your AWS access key ID and secret access key are required as well, but we inherit the standardized values from `process.env.AWS_ACCESS_KEY_ID` and `process.env.AWS_SECRET_ACCESS_KEY` respectively. If those environment variables are not set you will either need to set them, pass them before running `cacti`, or specify them through the API options below.
 
 ### CLI
@@ -179,6 +180,9 @@ const cacti = new Cacti('bucket', {
   // s3 directory for redis backup
   redisDirectory: 'redis',
   // mongorestore options/flags
+  // note that if `process.env.DATABASE_NAME` is set
+  // set this value to `--db=${process.env.DATABASE_NAME}`
+  // (as long as you don't pass this option at all when configuring)
   mongo: '',
   // redis-cli options/flags
   redis: '',
