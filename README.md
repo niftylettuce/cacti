@@ -215,7 +215,7 @@ const Agenda = require('agenda');
 const cacti = new Cacti('my-s3-bucket-name');
 const agenda = new Agenda();
 
-agenda.define('backup', async (job, done) => {
+agenda.define('cacti', async (job, done) => {
   try {
     await cacti.backup();
     done();
@@ -224,7 +224,7 @@ agenda.define('backup', async (job, done) => {
   }
 });
 
-agenda.every('hour', 'backup');
+agenda.every('hour', 'cacti');
 ```
 
 ### [Kue][]
@@ -238,7 +238,7 @@ const kue = require('kue');
 const queue = kue.createQueue();
 const cacti = new Cacti('my-s3-bucket-name');
 
-queue.process('backup', async (job, done) => {
+queue.process('cacti', async (job, done) => {
   try {
     await cacti.backup();
     done();
@@ -248,7 +248,7 @@ queue.process('backup', async (job, done) => {
 });
 
 setInterval(() => {
-  queue.create('backup').save();
+  queue.create('cacti').save();
 }, 1000 * 60 * 60);
 ```
 
