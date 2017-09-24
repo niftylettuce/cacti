@@ -309,14 +309,13 @@ You can use simply use the `mongorestore` command.
 2. Download your backup from Amazon S3:
 
 ```sh
-wget -O mongo-backup.tar https://s3.amazonaws.com/my-bucket/xx-xx-xxxx-xx:xx:xx.tar
-tar xvf mongo-backup.tar
+wget -O archive.gz https://s3.amazonaws.com/my-bucket/xx-xx-xxxx-xx:xx:xx.archive.gz
 ```
 
 3. Import the backup to MongoDB:
 
 ```sh
-mongorestore
+mongorestore --gzip --archive=archive.gz
 ```
 
 4. Start your mongo server:
@@ -334,8 +333,7 @@ mongorestore
 2. Download your backup from Amazon S3:
 
 ```sh
-wget -O redis-backup.tar https://s3.amazonaws.com/my-bucket/xx-xx-xxxx-xx:xx:xx.tar
-tar xvf redis-backup.tar
+wget -O dump.rdb https://s3.amazonaws.com/my-bucket/xx-xx-xxxx-xx:xx:xx.dump.rdb
 ```
 
 3. Move the extracted `dump.rdb` file:

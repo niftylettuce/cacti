@@ -17,7 +17,7 @@
     "child-process-promise": "^2.2.1",
     "delay": "^2.0.0",
     "fs-extra": "^4.0.2",
-    "tar": "^4.0.1"
+    "lodash.compact": "^3.0.1"
   },
   "ava": {
     "failFast": true,

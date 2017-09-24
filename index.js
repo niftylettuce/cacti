@@ -1,14 +1,13 @@
 const os = require('os');
 const path = require('path');
 const delay = require('delay');
-const tar = require('tar');
 const fs = require('fs-extra');
 const { exec } = require('child-process-promise');
 const autoBind = require('auto-bind');
 const AWS = require('aws-sdk');
 
 class Cacti {
-  constructor(bucket = process.env.CACTI_AWS, config = {}) {
+  constructor(bucket = process.env.CACTI_AWS_BUCKET, config = {}) {
     // allow config as first argument
     if (typeof bucket === 'object') config = bucket;
 
@@ -83,18 +82,18 @@ class Cacti {
 
     // prohibit --gzip flag
     if (this.config.mongo.indexOf('--gzip') !== -1)
-      throw new Error('gzip flag is unnecessary, please remove it');
+      throw new Error('gzip flag is automatically added, please remove it');
 
     // prohibit --archive flag
     if (this.config.mongo.indexOf('--archive') !== -1)
-      throw new Error('archive flag is unnecessary, please remove it');
+      throw new Error('archive flag is automatically added, please remove it');
 
     // prohibit -o or --out
     if (
       this.config.mongo.indexOf('-o') !== -1 ||
       this.config.mongo.indexOf('--out') !== -1
     )
-      throw new Error('output flag is unnecessary, please remove it');
+      throw new Error('output flag is disabled, please remove it');
 
     autoBind(this);
   }
@@ -104,8 +103,7 @@ class Cacti {
       tasks.map(prop => {
         return new Promise(async (resolve, reject) => {
           try {
-            let filePath = await this[prop]();
-            filePath = await this.tar(filePath);
+            const filePath = await this[prop]();
             const res = await this.upload(
               this.config[`${prop}Directory`],
               filePath
@@ -154,27 +152,17 @@ class Cacti {
     });
   }
 
-  tar(dir) {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const file = `${os.tmpdir()}/${path.basename(dir)}.tgz`;
-        await tar.c({ gzip: true, file, cwd: path.dirname(dir) }, [
-          path.basename(dir)
-        ]);
-        await fs.remove(dir);
-        resolve(file);
-      } catch (err) {
-        reject(err);
-      }
-    });
-  }
-
   mongo() {
     return new Promise(async (resolve, reject) => {
       try {
-        const dir = path.join(__dirname, new Date().toISOString());
-        await exec(`mongodump ${this.config.mongo} --out=${dir}`);
-        resolve(dir);
+        const archive = path.join(
+          __dirname,
+          new Date().toISOString() + '.archive.gz'
+        );
+        await exec(
+          `mongodump ${this.config.mongo} --archive=${archive} --gzip`
+        );
+        resolve(archive);
       } catch (err) {
         reject(err);
       }
