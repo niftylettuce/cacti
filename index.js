@@ -2,9 +2,10 @@ const os = require('os');
 const path = require('path');
 const delay = require('delay');
 const fs = require('fs-extra');
-const { exec } = require('child-process-promise');
 const autoBind = require('auto-bind');
 const AWS = require('aws-sdk');
+const { promisify } = require('util');
+const spawn = promisify(require('child_process').spawn);
 
 class Cacti {
   constructor(bucket = process.env.CACTI_AWS_BUCKET, config = {}) {
@@ -159,7 +160,7 @@ class Cacti {
           __dirname,
           new Date().toISOString() + '.archive.gz'
         );
-        await exec(
+        await spawn(
           `mongodump ${this.config.mongo} --archive=${archive} --gzip`
         );
         resolve(archive);
@@ -174,7 +175,7 @@ class Cacti {
       try {
         await delay(this.config.redisBgSaveCheckInterval);
 
-        const { stdout } = await exec(
+        const { stdout } = await spawn(
           `echo lastsave | redis-cli ${this.config.redis}`
         );
 
@@ -203,11 +204,11 @@ class Cacti {
           .split('\n')[1]
           .split(' ')[1];
         const rdbFilePath = path.join(rdbDirectory, rdbFileName);
-        let lastSave = await exec(
+        let lastSave = await spawn(
           `echo lastsave | redis-cli ${this.config.redis}`
         );
         lastSave = parseInt(lastSave.stdout.replace(/\D/g, ''), 10);
-        await exec(`echo bgsave | redis-cli ${this.config.redis}`);
+        await spawn(`echo bgsave | redis-cli ${this.config.redis}`);
         const filePath = await this.getRedisBgSaveFilePath(lastSave);
         await fs.copy(rdbFilePath, filePath);
         resolve(filePath);
